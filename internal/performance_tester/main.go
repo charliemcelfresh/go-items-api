@@ -16,20 +16,22 @@ import (
 )
 
 const (
-	contentType     = "Content-Type"
-	applicationJSON = "application/json"
-	xUserID         = "X-User-Id"
-	httpGET         = "GET"
-	httpStr         = "http"
-	localhost       = "localhost"
-	golang          = "go"
-	goHTTPPort      = "3001"
-	railsHTTPPort   = "3000"
-	sinatraHTTPPort = "4567"
-	rails           = "rails"
-	sinatra         = "sinatra"
-	itemsPath       = "/api/v1/items"
-	userIDsPath     = "/api/v1/user_ids"
+	contentType       = "Content-Type"
+	applicationJSON   = "application/json"
+	xUserID           = "X-User-Id"
+	httpGET           = "GET"
+	httpStr           = "http"
+	localhost         = "localhost"
+	golang            = "go"
+	postgrest         = "postgrest"
+	goHTTPPort        = "3001"
+	railsHTTPPort     = "3000"
+	sinatraHTTPPort   = "4567"
+	postgrestHTTPPort = "3002"
+	rails             = "rails"
+	sinatra           = "sinatra"
+	itemsPath         = "/api/v1/items"
+	userIDsPath       = "/api/v1/user_ids"
 )
 
 var (
@@ -55,6 +57,7 @@ func work(requestCh <-chan *http.Request, responseCh chan<- *http.Response, wg *
 type app struct {
 	name string
 	port string
+	path string
 }
 
 type result struct {
@@ -74,7 +77,7 @@ func (r report) String() string {
 		},
 	)
 	for _, res := range r {
-		formatted := fmt.Sprintf("%7v: %v", res.name, res.elapsedTime)
+		formatted := fmt.Sprintf("%10v: %v", res.name, res.elapsedTime)
 		output = append(output, formatted)
 	}
 	return strings.Join(output, "\n")
@@ -89,14 +92,22 @@ func main() {
 		{
 			name: golang,
 			port: goHTTPPort,
+			path: "/api/v1/items",
 		},
 		{
 			name: rails,
 			port: railsHTTPPort,
+			path: "/api/v1/items",
 		},
 		{
 			name: sinatra,
 			port: sinatraHTTPPort,
+			path: "/api/v1/items",
+		},
+		{
+			name: postgrest,
+			port: postgrestHTTPPort,
+			path: "/get_user_items",
 		},
 	}
 
@@ -127,9 +138,10 @@ func main() {
 		for i := 0; i < reqCt; i++ {
 			randOffset := rand.Intn(10) * 10
 			rawQuery := map[string]string{
-				"page": fmt.Sprintf("%d", randOffset),
+				"limit":  "10",
+				"offset": fmt.Sprintf("%d", randOffset),
 			}
-			requests[i] = createRequest(localhost, a.port, itemsPath, rawQuery, randomUserID(userIds))
+			requests[i] = createRequest(localhost, a.port, a.path, rawQuery, randomUserID(userIds))
 		}
 
 		go func() {
@@ -189,6 +201,7 @@ func createRequest(host, port, path string, rawQuery map[string]string, userID i
 		contentType: {applicationJSON},
 		xUserID:     {fmt.Sprintf("%v", userID)},
 	}
+
 	r := http.Request{
 		Method: httpGET,
 		URL:    &url,

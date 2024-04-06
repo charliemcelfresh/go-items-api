@@ -30,24 +30,6 @@ func init() {
 	}
 }
 
-func GetMySQLDB() *sqlx.DB {
-	oneMySQLDBPool.Do(
-		func() {
-			var err error
-			dbUrl := os.Getenv("MYSQL_DATABASE_URL")
-			connStr := fmt.Sprintf("%v", dbUrl)
-			mySQLDBPool, err = sqlx.Open("mysql", connStr)
-			if err != nil {
-				panic(err)
-			}
-			mySQLDBPool.SetConnMaxLifetime(0)
-			mySQLDBPool.SetMaxIdleConns(3)
-			mySQLDBPool.SetMaxOpenConns(3)
-		},
-	)
-	return mySQLDBPool
-}
-
 func GetDB() *sqlx.DB {
 	oneDBPool.Do(
 		func() {

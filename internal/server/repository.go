@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/charliemcelfresh/go-items-api/internal/config"
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
 type repository struct {
@@ -13,7 +13,7 @@ type repository struct {
 }
 
 func NewRepository() repository {
-	return repository{pool: config.GetMySQLDB()}
+	return repository{pool: config.GetDB()}
 }
 
 // GetItems retrieves the current user's items, offset by the URL "page"
@@ -29,9 +29,9 @@ func (r repository) GetItems(ctx context.Context, page int) ([]Item, error) {
 		JOIN
 			user_items ui ON ui.item_id = i.id
 		WHERE
-		    ui.user_id = ?
+		    ui.user_id = $1
 		LIMIT 10
-		OFFSET ?
+		OFFSET $2
 
 	`
 	err := r.pool.SelectContext(ctx, &itemsToReturn, statement, userID, page)
